@@ -1,0 +1,18 @@
+.autocompleter {
+  border: 1px solid #000000;
+  background-color: #FFFFFF;
+  overflow: auto;
+  z-index: 1;
+  position: absolute;
+}
+
+/* A normal row */
+.autocompleter .row {
+  cursor: default;
+}
+
+/* A selected row */
+.autocompleter .selected {
+  color: #FFFFFF;
+  background-color: #3366CC;
+}
