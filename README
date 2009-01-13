@@ -1,7 +1,12 @@
 The Autocompleter JQuery plugin adds autocomplete functionalities to a standard
 input field. It is quite flexible and powerful, but offers sane defaults.
-
 Example:
+
+Given this element:
+
+  <input id="autocomplete_me" type="text"/>
+
+You can add autocomplete functionalities to this element via:
 
   $("input#autocomplete_me").autocompleter("http://mysite/autocomplete.json");
 
@@ -45,7 +50,7 @@ The content of the autocomplete popup will look like this:
 Per default, the autocomplete popup displays 8 rows of suggestions, with a
 scrollbar if needed. The autocomplete will cache 5 queries per default.
 
-Apart from rows and url, a large number of settings and callback are supported.
+Apart from rows and url, a large number of settings and callbacks are supported.
 
 JSON-related settings:
 
