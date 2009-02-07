@@ -355,7 +355,7 @@ jQuery.fn.autoCompleter = function(url, options) {
     // apply filter function, if any
     if (this.settings.inputFilterCallback)
       criterion = this.settings.inputFilterCallback.call(this, criterion);
-    if (!criterion)
+    if (criterion == null)
       return;
     // Not enough characters in the input, move along
     if (this.settings.minChars && criterion.length < this.settings.minChars) {
