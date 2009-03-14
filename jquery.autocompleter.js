@@ -45,7 +45,9 @@ jQuery.fn.autoCompleter = function(url, options) {
   // smarter to share the result of the queries
   var cache = {};
   var cacheSize = 0;
-
+  var reqId = 0; // Request id - make sure we execute the autocomplete action
+                //for the *last* input (avoids concurrency issues).
+  
   var settings = jQuery.extend({
     rows: 10, // number of rows to display
     resultKey: "results", // name of the key in the JSON result
@@ -62,6 +64,8 @@ jQuery.fn.autoCompleter = function(url, options) {
     rowValueKey: "autocompleter.rowValue", // key used to store the real value of a row
     inputFilterCallback: null, // callback to filter the input value before making the query
     queryCallback: null, // query to do the callback
+    selectRowCallback: null, // callback triggered when a row is selected
+    confirmSuggestionCallback: null, // callback after a suggestion is confirmed
     resultsFilterCallback: null, // callback to filter the AJAX result hash
     createResultRowCallback: null // callback to create a row to add to the autocomplete popup
   }, options);
@@ -160,7 +164,7 @@ jQuery.fn.autoCompleter = function(url, options) {
         this.delayedAutoComplete();
         break;
       default:
-        this.$input.data(this.settings.originalValueKey, this.$input.val());
+        this.isChanged = false;//Check
         this.delayedAutoComplete();
         break;
     };
@@ -213,6 +217,19 @@ jQuery.fn.autoCompleter = function(url, options) {
     var $selectedRows = this.$popup.find(".selected");
     return $selectedRows.length > 0 ? $selectedRows.eq(0) : null;
   }
+ 
+  // Retrieves the value of the currently selected row, if any
+  AutoCompleter.prototype.getSelectedValue = function() {
+    var $row = this.getSelectedRow();
+    if (!$row)
+      return null;
+    var value;
+    if (this.settings.rowHash)
+      value = $row.data(this.settings.rowValueKey);
+    else
+      value = $row.text();
+    return value;
+  }
 
   // Select the next suggestion in the popup
   AutoCompleter.prototype.nextSuggestion = function() {
@@ -258,12 +275,12 @@ jQuery.fn.autoCompleter = function(url, options) {
       var originalValue = $input.data(key);
       if (!originalValue)
         $input.data(key, this.$input.val());
-      var value = null;
-      if (this.settings.rowValueKey)
-        value = $row.data(this.settings.rowValueKey);
-      if (value == null)
-        value = $row.text();
-      $input.val(value);
+      var value = this.getSelectedValue();
+      if (this.settings.selectRowCallback)
+        this.settings.selectRowCallback.call(this, value, $row.html());
+      else
+        $input.val(value);
+      this.isChanged = true;
     }
     else {
       debug3("Selected null row");
@@ -277,10 +294,18 @@ jQuery.fn.autoCompleter = function(url, options) {
 
   // Revert to original value
   AutoCompleter.prototype.rollback = function() {
-    var originalValue = this.originalValue();
-    this.$input.val(originalValue);  
+      if (this.isInputTestChanged()) {	
+        var originalValue = this.originalValue();
+        if (this.settings.rollbackCallback)
+          this.settings.rollbackCallback.call(this, originalValue);
+        else
+          this.$input.val(originalValue);
+    }
   }
 
+  AutoCompleter.prototype.isInputTestChanged= function() {
+	  return this.isChanged;
+  }
   // Closes the popup and rolls back the changes
   AutoCompleter.prototype.killPopup = function() {
     if (this.isPopupVisible()) {
@@ -293,8 +318,14 @@ jQuery.fn.autoCompleter = function(url, options) {
   // User has selected an item
   AutoCompleter.prototype.confirmSuggestion = function() {
     if (this.$selectedRow != null) {
+      this.isChanged = false; //This is now the new default Input value.
       this.$input.removeData(this.settings.originalValueKey);
       this.hidePopup();
+      if (this.settings.confirmSuggestionCallback) {
+          debug1("Triggering confirmSuggestionCallback");
+          this.settings.confirmSuggestionCallback.call(this, this.getSelectedValue(), this.$selectedRow.html());
+        }
+      
     }
     else {
       this.killPopup();
@@ -313,7 +344,9 @@ jQuery.fn.autoCompleter = function(url, options) {
     var delay = this.settings.delay;
     if (delay) {
       var me = this;
-      setTimeout(function () { me.autoComplete(); }, delay);
+      reqId++;
+      var pReqId = reqId;
+      setTimeout(function () { me.autoComplete(pReqId); }, delay);
     }
   }
 
@@ -347,11 +380,16 @@ jQuery.fn.autoCompleter = function(url, options) {
   }
 
   // Main action
-  AutoCompleter.prototype.autoComplete = function() {
+  AutoCompleter.prototype.autoComplete = function(pReqId) {
+    // Make sure we only execute the autocomplete for the *last* input action
+    if (reqId != pReqId){
+      return;
+    }
     var criterion = this.$input.val();
 
-    //Save the criterion for restoring it later
+    //Save the criterion for restoring it later 
     this.$input.data(this.settings.originalValueKey, criterion);
+
     // apply filter function, if any
     if (this.settings.inputFilterCallback)
       criterion = this.settings.inputFilterCallback.call(this, criterion);
@@ -475,14 +513,14 @@ jQuery.fn.autoCompleter = function(url, options) {
         if (row) {
           var $row = $(row); 
           if (me.settings.rowHash)
-          $row.data(me.settings.rowValueKey, value);
+            $row.data(me.settings.rowValueKey, value);
           me.$popup.append($row);
           if (maxRowCount != null && maxRowCount == i) {
             // Looks stupid, innit? But this way we can force the height,
             // and make sure we only display maxRowCount
             me.$popup.height(me.$popup.height() + borderWidth);
           }
-          $row.click(function(e) {
+          $row.mousedown(function(e) {
             me.strangleEvent(e);
             me.selectRow($(this));
             me.confirmSuggestion();
@@ -497,7 +535,7 @@ jQuery.fn.autoCompleter = function(url, options) {
   AutoCompleter.prototype.createResultRow = function(val) {
     var row = document.createElement("div");
     row.setAttribute("class", "row");
-    row.appendChild(document.createTextNode(val));
+    $(row).html(val);
     return row;
   };
 
