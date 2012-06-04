@@ -410,7 +410,7 @@ jQuery.fn.autoCompleter = function(url, options) {
     else {
       var callback = function (results) {
         me.cache(criterion, results);
-        me.handleQueryResults(results)
+        me.handleQueryResults(results, pReqId);
       };
       if (this.settings.queryCallback) {
         debug1("Triggering queryCallback");
@@ -473,7 +473,9 @@ jQuery.fn.autoCompleter = function(url, options) {
   }
 
   // Handles the JSON results
-  AutoCompleter.prototype.handleQueryResults = function(resultsHash) {
+  AutoCompleter.prototype.handleQueryResults = function(resultsHash, pReqId) {
+    if (reqId != pReqId)
+      return;
     debug2("Received following data: ")
     debug2(resultsHash);
     if (!resultsHash instanceof Object)
