@@ -68,8 +68,9 @@ jQuery.fn.autoCompleter = function(url, options) {
     confirmSuggestionCallback: null, // callback after a suggestion is confirmed
     resultsFilterCallback: null, // callback to filter the AJAX result hash
     createResultRowCallback: null, // callback to create a row to add to the autocomplete popup
-    cachePrefix: '' // uses a prefix when doing lookups in the cache, for when
+    cachePrefix: '', // uses a prefix when doing lookups in the cache, for when
         //autocompleters are plugged to different URLs
+    catchEnterEvent: false // if false, the keypress event is caught when the user presses 'enter' to select a suggestion, for example to prevent the submission of a form - which you don't want when forms have multiple fields
   }, options);
 
   // "Global" functions
@@ -154,7 +155,9 @@ jQuery.fn.autoCompleter = function(url, options) {
         break; // catch it in processMovementKeys
       case 13: // enter
         if (isPopupVisible) {
-          this.strangleEvent(e);
+          if (!this.settings.catchEnterEvent) {
+              this.strangleEvent(e);
+          }
           this.confirmSuggestion();
         }
         break;
