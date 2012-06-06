@@ -67,7 +67,9 @@ jQuery.fn.autoCompleter = function(url, options) {
     selectRowCallback: null, // callback triggered when a row is selected
     confirmSuggestionCallback: null, // callback after a suggestion is confirmed
     resultsFilterCallback: null, // callback to filter the AJAX result hash
-    createResultRowCallback: null // callback to create a row to add to the autocomplete popup
+    createResultRowCallback: null, // callback to create a row to add to the autocomplete popup
+    cachePrefix: '' // uses a prefix when doing lookups in the cache, for when
+        //autocompleters are plugged to different URLs
   }, options);
 
   // "Global" functions
@@ -402,14 +404,14 @@ jQuery.fn.autoCompleter = function(url, options) {
     }
     var me = this;
 
-    if (cache[criterion]) {
-      var resultsHash = me.cache(criterion);
+    if (cache[cachePrefix + criterion]) {
+      var resultsHash = me.cache(me.settings.cachePrefix + criterion);
       me.handleQueryResults(resultsHash, pReqId);
     }
     // no cache
     else {
       var callback = function (results) {
-        me.cache(criterion, results);
+        me.cache(me.settings.cachePrefix + criterion, results);
         me.handleQueryResults(results, pReqId);
       };
       if (this.settings.queryCallback) {
