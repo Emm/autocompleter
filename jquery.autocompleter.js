@@ -73,6 +73,9 @@ jQuery.fn.autoCompleter = function(url, options) {
     catchEnterEvent: false // if false, the keypress event is caught when the user presses 'enter' to select a suggestion, for example to prevent the submission of a form - which you don't want when forms have multiple fields
   }, options);
 
+  $input.data(settings.autoCompleterKey, null);
+  $input.data(settings.originalValueKey, null);
+
   // "Global" functions
   function throwError(text) {
     throw "Error in the jQuery AutoCompleter plugin: " + text;
