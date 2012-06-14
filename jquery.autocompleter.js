@@ -407,7 +407,7 @@ jQuery.fn.autoCompleter = function(url, options) {
     }
     var me = this;
 
-    if (cache[cachePrefix + criterion]) {
+    if (cache[me.settings.cachePrefix + criterion]) {
       var resultsHash = me.cache(me.settings.cachePrefix + criterion);
       me.handleQueryResults(resultsHash, pReqId);
     }
